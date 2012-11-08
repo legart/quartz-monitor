@@ -50,7 +50,7 @@ class QuartzController {
         quartzScheduler.unscheduleJob(params.triggerName, params.triggerGroup)
         redirect(action: "list")
     }
-    
+
     def start = {
         def trigger = triggers.get(params.jobName)
         quartzScheduler.scheduleJob(trigger)
@@ -67,10 +67,17 @@ class QuartzController {
         redirect(action: "list")
     }
 
+
     def runNow = {
-        quartzScheduler.triggerJob(params.jobName, params.jobGroup, null)
+        def jobDetail = quartzScheduler.getJobDetail(params.jobName, params.jobGroup)
+        if (jobDetail?.isVolatile()){//duplication of triggerNow in the quartz plugin, but jobs added at run time do not have the triggerNow method
+          quartzScheduler.triggerJobWithVolatileTrigger(params.jobName, params.jobGroup, null)
+        } else {
+          quartzScheduler.triggerJob(params.jobName, params.jobGroup, null)
+        }
         redirect(action: "list")
     }
+
 
     def startScheduler = {
         quartzScheduler.start()
